@@ -53,7 +53,7 @@ body::before{
 body::after{
   content:'';
   position:fixed;inset:0;
-  background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.85) 100%);
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.35) 100%);
   pointer-events:none;
   z-index:9998;
 }
@@ -111,7 +111,7 @@ canvas{display:block;width:900px;height:660px;image-rendering:pixelated;}
 .pu-s .pu-lbl{font-family:'Share Tech Mono',monospace;font-size:6px;color:var(--dim);letter-spacing:.05em;text-align:center;line-height:1.2;max-width:38px;overflow:hidden;}
 .pu-s.lit .pu-lbl{color:var(--gold2);}
 
-#mmcv{position:absolute;bottom:6px;right:6px;width:180px;height:150px;border:1px solid #3A1020;background:rgba(4,2,8,.97);z-index:20;pointer-events:none;box-shadow:0 0 20px rgba(139,0,0,.25),0 0 40px rgba(0,0,0,.9);border-radius:2px;}
+#mmcv{position:absolute;bottom:6px;right:6px;width:180px;height:150px;border:1px solid #3A1020;background:rgba(4,2,8,.97);z-index:20;pointer-events:none;box-shadow:0 0 20px rgba(139,0,0,.25),0 0 40px rgba(0,0,0,.9);border-radius:2px;transition:opacity .3s;}
 
 #msg{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);font-family:'Special Elite',cursive;font-size:13px;letter-spacing:.12em;color:var(--blood2);text-shadow:0 0 10px var(--blood);pointer-events:none;z-index:25;opacity:0;transition:opacity .4s;white-space:nowrap;text-align:center;}
 
@@ -298,6 +298,7 @@ canvas{display:block;width:900px;height:660px;image-rendering:pixelated;}
   border:1px solid rgba(184,134,11,.35);
   border-radius:3px;
   padding:5px 6px;
+  transition:opacity .3s;
 }
 #invSlots{
   display:flex;
@@ -864,6 +865,7 @@ function drawScene(){
   if(player)drawPlayer(player);
   drawRoomBanner();
   drawMM();
+  fadeHUDPanels();
 }
 
 function drawFloor(rm){
@@ -937,7 +939,160 @@ function drawFloor(rm){
       CX.restore();
     });
 
-    // Boss room — pentagram and blood aura
+    // ── ONE LARGE DARK RUNE carved into the floor centre ──
+    {
+      const runeSyms=['⛧','☠','✝','☽','⬡'];
+      const rSym=runeSyms[Math.floor(seed*3.7)%runeSyms.length];
+      const cx2=W/2, cy2=H/2;
+      const rs=72; // big
+      CX.save();
+      // Dark worn stone base — slightly darker than floor
+      CX.fillStyle='rgba(10,8,18,.55)';
+      CX.beginPath();CX.ellipse(cx2,cy2,rs+18,rs+8,0,0,Math.PI*2);CX.fill();
+      // Outer carved ring — worn, not glowing
+      CX.strokeStyle='rgba(90,70,120,.5)';CX.lineWidth=3;
+      CX.beginPath();CX.arc(cx2,cy2,rs,0,Math.PI*2);CX.stroke();
+      // Inner ring
+      CX.strokeStyle='rgba(70,50,100,.4)';CX.lineWidth=1.5;
+      CX.beginPath();CX.arc(cx2,cy2,rs*.65,0,Math.PI*2);CX.stroke();
+      // 8 radial etching lines between the rings
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4;
+        CX.strokeStyle='rgba(80,55,110,.35)';CX.lineWidth=1;
+        CX.beginPath();
+        CX.moveTo(cx2+Math.cos(a)*rs*.65,cy2+Math.sin(a)*rs*.65);
+        CX.lineTo(cx2+Math.cos(a)*rs,cy2+Math.sin(a)*rs);
+        CX.stroke();
+      }
+      // Central symbol — dark, aged, carved not painted
+      // No glow — just a dark etching like it was cut into the stone
+      CX.fillStyle='rgba(50,35,75,.8)';
+      CX.font='bold 88px serif';
+      CX.textAlign='center';CX.textBaseline='middle';
+      CX.fillText(rSym,cx2,cy2+4);
+      // Very faint interior, slightly lighter than the symbol to show age
+      CX.fillStyle='rgba(100,70,130,.18)';
+      CX.font='bold 88px serif';
+      CX.fillText(rSym,cx2+1,cy2+5);
+      CX.restore();
+    }
+
+    // ── GRAVESTONES and STATUES in the corners ──
+    const stoneCorners=[
+      [PX1+55,PY1+70],[PX2-55,PY1+70],
+      [PX1+55,PY2-60],[PX2-55,PY2-60]
+    ];
+    stoneCorners.forEach(([sx,sy],si)=>{
+      CX.save();CX.translate(sx,sy);
+      const wobble=Math.sin(si*2.3+seed)*.5+.5; // 0–1 per corner
+      const isStatue=si%2===0; // alternating gravestone / statue
+
+      if(isStatue){
+        // ── CREEPY STATUE — robed figure on a plinth ──
+
+        // Ground shadow
+        CX.fillStyle='rgba(0,0,0,.4)';
+        CX.beginPath();CX.ellipse(0,38,22,7,0,0,Math.PI*2);CX.fill();
+
+        // Plinth base
+        CX.fillStyle='#302840';CX.strokeStyle='#504060';CX.lineWidth=1.5;
+        CX.beginPath();CX.roundRect(-20,24,40,16,2);CX.fill();CX.stroke();
+        // Plinth step
+        CX.fillStyle='#382E4A';CX.strokeStyle='#584870';CX.lineWidth=1;
+        CX.beginPath();CX.roundRect(-16,16,32,10,1);CX.fill();CX.stroke();
+        // Plinth crack
+        CX.strokeStyle='rgba(0,0,0,.5)';CX.lineWidth=1;
+        CX.beginPath();CX.moveTo(-4,18);CX.lineTo(-2,30);CX.stroke();
+
+        // Robe lower — wide at base, narrowing up
+        const robeG=CX.createLinearGradient(-14,14,14,14);
+        robeG.addColorStop(0,'#2A2240');robeG.addColorStop(.5,'#3A3055');robeG.addColorStop(1,'#222038');
+        CX.fillStyle=robeG;CX.strokeStyle='#4A4068';CX.lineWidth=1.5;
+        CX.beginPath();
+        CX.moveTo(-14,16);CX.lineTo(-12,-18);CX.lineTo(-6,-22);
+        CX.lineTo(6,-22);CX.lineTo(12,-18);CX.lineTo(14,16);
+        CX.closePath();CX.fill();CX.stroke();
+        // Robe fold lines
+        CX.strokeStyle='rgba(30,20,50,.7)';CX.lineWidth=1;
+        CX.beginPath();CX.moveTo(-6,14);CX.lineTo(-5,-18);CX.stroke();
+        CX.beginPath();CX.moveTo(4,14);CX.lineTo(3,-18);CX.stroke();
+
+        // Arms crossed/tucked under robe
+        CX.fillStyle='#2E2648';CX.strokeStyle='#4A3E66';CX.lineWidth=1;
+        CX.beginPath();CX.roundRect(-12,-14,24,8,2);CX.fill();CX.stroke();
+
+        // Hood / head
+        CX.fillStyle='#2A2040';CX.strokeStyle='#403860';CX.lineWidth=1.5;
+        CX.beginPath();
+        CX.moveTo(-10,-22);CX.bezierCurveTo(-12,-32,-8,-40,0,-42);
+        CX.bezierCurveTo(8,-40,12,-32,10,-22);
+        CX.closePath();CX.fill();CX.stroke();
+        // Hood shadow / face void
+        CX.fillStyle='rgba(5,3,10,.95)';
+        CX.beginPath();CX.ellipse(0,-30,5,7,0,0,Math.PI*2);CX.fill();
+        // Faint pinprick eyes in the dark
+        const eyePulse=.3+Math.sin(t*.8+si)*.2;
+        CX.fillStyle=`rgba(180,140,255,${eyePulse})`;
+        CX.beginPath();CX.arc(-2,-30,1.2,0,Math.PI*2);CX.fill();
+        CX.beginPath();CX.arc(2,-30,1.2,0,Math.PI*2);CX.fill();
+        // Weathering on robe
+        CX.strokeStyle='rgba(0,0,0,.4)';CX.lineWidth=.8;
+        CX.beginPath();CX.moveTo(-8,0);CX.lineTo(-7,8);CX.stroke();
+        CX.beginPath();CX.moveTo(5,-4);CX.lineTo(6,4);CX.stroke();
+
+      } else {
+        // ── GRAVESTONE — weathered, leaning, moss-stained ──
+
+        const lean=(si===1?.08:-.07); // lean direction
+
+        // Ground shadow
+        CX.fillStyle='rgba(0,0,0,.35)';
+        CX.beginPath();CX.ellipse(4,10,26,7,0,0,Math.PI*2);CX.fill();
+
+        // Soil mound at base
+        CX.fillStyle='#1C1428';CX.strokeStyle='#2C2038';CX.lineWidth=1;
+        CX.beginPath();CX.ellipse(0,12,22,8,lean,0,Math.PI*2);CX.fill();CX.stroke();
+
+        CX.rotate(lean);
+
+        // Stone body — granite grey
+        const gsG=CX.createLinearGradient(-16,-60,16,-60);
+        gsG.addColorStop(0,'#2E2A3C');gsG.addColorStop(.4,'#3E3A50');gsG.addColorStop(1,'#282438');
+        CX.fillStyle=gsG;CX.strokeStyle='#504A68';CX.lineWidth=1.5;
+        // Rounded arch top
+        CX.beginPath();
+        CX.moveTo(-14,8);CX.lineTo(-14,-44);
+        CX.bezierCurveTo(-14,-62,14,-62,14,-44);
+        CX.lineTo(14,8);CX.closePath();
+        CX.fill();CX.stroke();
+
+        // Stone cracks
+        CX.strokeStyle='rgba(0,0,0,.55)';CX.lineWidth=1;
+        CX.beginPath();CX.moveTo(-4,-20);CX.lineTo(-2,-8);CX.lineTo(-5,4);CX.stroke();
+        CX.beginPath();CX.moveTo(5,-40);CX.lineTo(4,-30);CX.stroke();
+
+        // Carved cross on stone
+        CX.strokeStyle='rgba(80,65,105,.8)';CX.lineWidth=2.5;
+        CX.beginPath();CX.moveTo(0,-54);CX.lineTo(0,-28);CX.stroke();
+        CX.beginPath();CX.moveTo(-8,-44);CX.lineTo(8,-44);CX.stroke();
+
+        // Worn inscription lines (just marks, no readable text)
+        CX.strokeStyle='rgba(60,50,85,.6)';CX.lineWidth=1;
+        CX.beginPath();CX.moveTo(-9,-16);CX.lineTo(9,-16);CX.stroke();
+        CX.beginPath();CX.moveTo(-7,-10);CX.lineTo(7,-10);CX.stroke();
+        CX.beginPath();CX.moveTo(-5,-4);CX.lineTo(6,-4);CX.stroke();
+
+        // Moss patches — dark green stains
+        CX.fillStyle='rgba(20,40,18,.55)';
+        CX.beginPath();CX.ellipse(-6,-34,5,3,-.4,0,Math.PI*2);CX.fill();
+        CX.beginPath();CX.ellipse(8,-24,4,2,.3,0,Math.PI*2);CX.fill();
+        CX.beginPath();CX.ellipse(-3,0,6,3,0,0,Math.PI*2);CX.fill();
+      }
+
+      CX.restore();
+    });
+
+        // Boss room — pentagram and blood aura
     if(rm.type==='boss'){
       CX.save();CX.translate(W/2,H/2);CX.globalAlpha=.12+Math.sin(t*.7)*.04;
       CX.strokeStyle='#8B0000';CX.lineWidth=2;
@@ -1331,6 +1486,37 @@ function drawWalls(rm){
     CX.ellipse(dx,dlen+3,2.5,3,0,0,Math.PI*2);CX.fill();
   }
   CX.restore();
+  // Dungeon wall runes — bright purple, clearly visible
+  if(theme==='dungeon'){
+    const wallRuneSet=['☽','⛧','✦','☠','⬡','☿','✝','⚰'];
+    CX.save();
+    // Top and bottom walls
+    wallRuneSet.forEach((rune,i)=>{
+      const rx=70+i*115, topY=WT*.5, botY=H-WT*.5;
+      CX.fillStyle='rgba(8,5,16,.9)';
+      CX.beginPath();CX.arc(rx,topY,11,0,Math.PI*2);CX.fill();
+      CX.beginPath();CX.arc(rx,botY,11,0,Math.PI*2);CX.fill();
+      CX.fillStyle='rgba(210,160,255,.8)';CX.font='bold 14px serif';
+      CX.textAlign='center';CX.textBaseline='middle';
+      CX.shadowColor='#BB77FF';CX.shadowBlur=7;
+      CX.fillText(rune,rx,topY);CX.fillText(rune,rx,botY);
+      CX.shadowBlur=0;
+    });
+    // Side walls
+    for(let wy=PY1+50;wy<PY2-30;wy+=85){
+      [[WT*.5,wy],[W-WT*.5,wy]].forEach(([wx,wy2])=>{
+        const ri=Math.floor((wx*0.01+wy2*0.01+seed)%wallRuneSet.length);
+        CX.fillStyle='rgba(8,5,16,.9)';
+        CX.beginPath();CX.arc(wx,wy2,10,0,Math.PI*2);CX.fill();
+        CX.fillStyle='rgba(210,160,255,.75)';CX.font='bold 13px serif';
+        CX.textAlign='center';CX.textBaseline='middle';
+        CX.shadowColor='#BB77FF';CX.shadowBlur=6;
+        CX.fillText(wallRuneSet[ri],wx,wy2);CX.shadowBlur=0;
+      });
+    }
+    CX.restore();
+  }
+
   // Lights — torches for dungeon/forest/void, fluorescent for liminal, candy lamp for candyland
   if(theme==='liminal'){
     // Fluorescent tubes — some dead, some flickering
@@ -1398,22 +1584,24 @@ function drawWalls(rm){
       drawTorch(tx,ty,t,rm._flicker||seed);
   }
 
-  // Carve door openings & draw door graphics
+  // Carve door openings — use floor color so transition looks natural per theme
+  const floorBg={dungeon:'#1A1428',liminal:'#B8A870',forest:'#060C04',
+                  candyland:'#EEB8D8',void:'#020208'}[theme]||'#08060E';
   const cl=rm.cleared;
   if(rm.doors.U){
-    CX.fillStyle='#08060E';CX.fillRect(W/2-DHW,0,DW,WT+1);
+    CX.fillStyle=floorBg;CX.fillRect(W/2-DHW,0,DW,WT+1);
     cl?drawOpenArch(W/2,WT,'up'):drawGate(W/2-DHW,0,DW,WT,'h');
   }
   if(rm.doors.D){
-    CX.fillStyle='#08060E';CX.fillRect(W/2-DHW,H-WT-1,DW,WT+1);
+    CX.fillStyle=floorBg;CX.fillRect(W/2-DHW,H-WT-1,DW,WT+1);
     cl?drawOpenArch(W/2,H-WT,'down'):drawGate(W/2-DHW,H-WT,DW,WT,'h');
   }
   if(rm.doors.L){
-    CX.fillStyle='#08060E';CX.fillRect(0,H/2-DHW,WT+1,DW);
+    CX.fillStyle=floorBg;CX.fillRect(0,H/2-DHW,WT+1,DW);
     cl?drawOpenArch(WT,H/2,'left'):drawGate(0,H/2-DHW,WT,DW,'v');
   }
   if(rm.doors.R){
-    CX.fillStyle='#08060E';CX.fillRect(W-WT-1,H/2-DHW,WT+1,DW);
+    CX.fillStyle=floorBg;CX.fillRect(W-WT-1,H/2-DHW,WT+1,DW);
     cl?drawOpenArch(W-WT,H/2,'right'):drawGate(W-WT,H/2-DHW,WT,DW,'v');
   }
 }
@@ -1430,34 +1618,49 @@ function drawTorch(x,y,t,off){
 }
 
 function drawOpenArch(ax,ay,dir){
-  CX.save();CX.strokeStyle='rgba(184,134,11,.5)';CX.lineWidth=2;
-  CX.shadowColor='#B8860B';CX.shadowBlur=8;
+  CX.save();
+  // Large glow pool first (drawn under pillars)
+  const gx=dir==='left'?ax+70:dir==='right'?ax-70:ax;
+  const gy=dir==='up'?ay+70:dir==='down'?ay-70:ay;
+  const g=CX.createRadialGradient(gx,gy,5,gx,gy,110);
+  g.addColorStop(0,'rgba(218,165,32,.55)');
+  g.addColorStop(.4,'rgba(184,134,11,.25)');
+  g.addColorStop(1,'transparent');
+  CX.fillStyle=g;CX.fillRect(gx-110,gy-110,220,220);
+  // Bright doorframe pillars with strong glow
+  CX.strokeStyle='#FFD060';CX.lineWidth=4;
+  CX.shadowColor='#FFD060';CX.shadowBlur=22;
   CX.beginPath();
   if(dir==='up'||dir==='down'){
-    const sy=dir==='up'?ay:ay;
-    CX.moveTo(ax-24,sy);CX.lineTo(ax-24,sy+(dir==='up'?10:-10));
-    CX.moveTo(ax+24,sy);CX.lineTo(ax+24,sy+(dir==='up'?10:-10));
+    const sign=dir==='up'?1:-1;
+    CX.moveTo(ax-DHW,ay);CX.lineTo(ax-DHW,ay+sign*24);
+    CX.moveTo(ax+DHW,ay);CX.lineTo(ax+DHW,ay+sign*24);
   } else {
-    CX.moveTo(ax,ay-24);CX.lineTo(ax+(dir==='left'?10:-10),ay-24);
-    CX.moveTo(ax,ay+24);CX.lineTo(ax+(dir==='left'?10:-10),ay+24);
+    const sign=dir==='left'?1:-1;
+    CX.moveTo(ax,ay-DHW);CX.lineTo(ax+sign*24,ay-DHW);
+    CX.moveTo(ax,ay+DHW);CX.lineTo(ax+sign*24,ay+DHW);
   }
-  CX.stroke();CX.shadowBlur=0;CX.restore();
+  CX.stroke();
+  CX.shadowBlur=0;CX.restore();
 }
 
 function drawGate(x,y,w,h,dir){
-  CX.strokeStyle='#2A1830';CX.lineWidth=3;CX.shadowColor='#8B0000';CX.shadowBlur=5;
+  // Bright red gate bars — clearly locked
+  CX.strokeStyle='#CC2222';CX.lineWidth=3;
+  CX.shadowColor='#FF0000';CX.shadowBlur=8;
   const n=4;
   if(dir==='h'){
     for(let i=1;i<=n;i++){
       const bx=x+i*(w/(n+1));
       CX.beginPath();CX.moveTo(bx,y);CX.lineTo(bx,y+h);CX.stroke();
-      CX.beginPath();CX.moveTo(bx-3,y);CX.lineTo(bx,y-6);CX.lineTo(bx+3,y);CX.stroke();
+      // Spike tip
+      CX.beginPath();CX.moveTo(bx-3,y+2);CX.lineTo(bx,y-7);CX.lineTo(bx+3,y+2);CX.stroke();
     }
   } else {
     for(let i=1;i<=n;i++){
       const by=y+i*(h/(n+1));
       CX.beginPath();CX.moveTo(x,by);CX.lineTo(x+w,by);CX.stroke();
-      CX.beginPath();CX.moveTo(x,by-3);CX.lineTo(x-6,by);CX.lineTo(x,by+3);CX.stroke();
+      CX.beginPath();CX.moveTo(x+2,by-3);CX.lineTo(x-7,by);CX.lineTo(x+2,by+3);CX.stroke();
     }
   }
   CX.shadowBlur=0;
@@ -1621,7 +1824,7 @@ function drawShopPedestal(item,sx,sy,idx,t){
   }
 
   // Card
-  const cardH=near?185:160;
+  const cardH=near?220:185;
   CX.fillStyle=near?'#201830':'#160E24';
   CX.strokeStyle=near?(canAfford?'#DAA520':'#CC2222'):'rgba(184,134,11,.4)';
   CX.lineWidth=near?2:1;
@@ -1659,16 +1862,20 @@ function drawShopPedestal(item,sx,sy,idx,t){
   CX.font='bold 12px Share Tech Mono,monospace';
   CX.fillText(item.cost+' pts',0,36);
 
-  // Security tip — bigger, always visible
+  // Security tip — clipped strictly inside card
+  CX.save();
+  // Clip relative to current transform (after bob translate)
+  CX.beginPath();CX.rect(-68,-92,136,cardH-8);CX.clip();
   const tipText=(item.desc||'').replace('Real tip: ','').replace('Real tip:','');
-  CX.fillStyle=near?'rgba(210,200,175,.9)':'rgba(180,170,145,.75)';
-  CX.font='10px Share Tech Mono,monospace';
-  const maxW=16;
+  CX.fillStyle=near?'rgba(210,200,175,.88)':'rgba(170,160,135,.7)';
+  CX.font='9px Share Tech Mono,monospace';
+  const maxW=18;
   const tipWords=tipText.split(' ');
   let line='',lines=[];
   tipWords.forEach(w=>{if((line+' '+w).trim().length>maxW){lines.push(line.trim());line=w;}else line+=(line?' ':'')+w;});
   if(line.trim())lines.push(line.trim());
-  lines.slice(0,4).forEach((l,li)=>CX.fillText(l,0,54+li*13));
+  lines.slice(0,5).forEach((l,li)=>CX.fillText(l,0,50+li*11));
+  CX.restore();
 
   // E badge when near + can afford
   if(near&&canAfford&&shopEntryCooldown<=0){
@@ -1715,6 +1922,17 @@ function drawRoomBanner(){
   CX.restore();
 }
 
+function fadeHUDPanels(){
+  if(!player) return;
+  // Right panel covers roughly x > W-200, y > H-320
+  const inZone = player.x > W-210 && player.y > H-340;
+  const op = inZone ? '0.15' : '1';
+  const mm=document.getElementById('mmcv');
+  const inv=document.getElementById('invPanel');
+  if(mm) mm.style.opacity=op;
+  if(inv) inv.style.opacity=op;
+}
+
 function drawMM(){
   const mm=document.getElementById('mmcv');
   const MW=mm.width||220, MH=mm.height||190;
@@ -1751,7 +1969,7 @@ function drawMM(){
   const ox=pad+Math.floor((avW-spanX*cw)/2);
   const oy=titleH+pad+Math.floor((avH-spanY*ch)/2);
 
-  const RFILL={start:'#0A1A0A',combat:'#100E1C',boss:'#220606',shop:'#1A1606',powerup:'#060E1A'};
+  const RFILL={start:'#1A3A1A',combat:'#2A2640',boss:'#4A1010',shop:'#2A2010',powerup:'#102038'};
   const RBORD={start:'#1A6A1A',combat:'#252045',boss:'#CC2222',shop:'#B8860B',powerup:'#2277BB'};
 
   // Pass 1: corridor lines between connected visited rooms
@@ -1797,11 +2015,11 @@ function drawMM(){
       const rx=ox+lx*cw+2, ry=oy+ly*ch+2;
 
       // Room fill
-      MC.fillStyle=isCur?'#5A0A0A':(isClr?(RFILL[rm.type]||'#100E1C'):'#080610');
+      MC.fillStyle=isCur?'#8A1010':(isClr?(RFILL[rm.type]||'#2A2640'):'#0E0C18');
       MC.fillRect(rx,ry,rw,rh);
 
       // Room border
-      MC.strokeStyle=isCur?'#FF4444':(RBORD[rm.type]||'#252045');
+      MC.strokeStyle=isCur?'#FF6666':(isClr?(RBORD[rm.type]||'#4A4880'):'#2A2640');
       MC.lineWidth=isCur?2:1;
       MC.strokeRect(rx,ry,rw,rh);
 
@@ -2337,13 +2555,18 @@ function update(dt){
   }
   // (angle stays at last movement direction when still)
 
-  // Space/click fires always — even in empty rooms
+  // Space/click fires always — even in empty rooms, respects all powerups
   if((pressed['_shoot']||pressed[' '])&&shootCD<=0){
-    if(nearest) autoFireAt(nearest);
-    else{
-      // No enemy — fire in the direction the player is facing
+    if(nearest){
+      autoFireAt(nearest); // uses tri/bookmark powerups
+    } else {
+      // No enemy — fire facing direction with all powerups applied
       const a=p.angle-Math.PI/2;
-      bullets.push({x:p.x,y:p.y,vx:Math.cos(a)*9,vy:Math.sin(a)*9,enemy:false});
+      const spd=9;
+      const fire=ang=>bullets.push({x:p.x,y:p.y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,enemy:false});
+      fire(a);
+      if(pStats.tri){fire(a-.26);fire(a+.26);}
+      if(hasPU('bookmark')) fire(a+.52);
     }
     shootCD=30;
   }
@@ -2500,17 +2723,23 @@ function updateE(e,p,dt){
 // test "past the wall". Instead: trigger when the player is within
 // TRIGGER_DIST of the wall edge AND centered on the door opening.
 function checkDoors(p){
-  const rm=curRoom();if(!rm.cleared)return;
+  const rm=curRoom();if(!rm||!rm.cleared)return;
   const hw=DHW+12;
-  const mid=WT/2; // trigger when player center passes wall midpoint
+  const mid=WT/2;
 
-  if(rm.doors.U && p.y<=PY1-mid && Math.abs(p.x-W/2)<hw)
+  // Always verify destination room exists before moving
+  const destExists=(ddx,ddy)=>{
+    const nx=roomPos.x+ddx, ny=roomPos.y+ddy;
+    return nx>=0&&nx<GW&&ny>=0&&ny<GH&&dungeonGrid[ny]?.[nx];
+  };
+
+  if(rm.doors.U && p.y<=PY1-mid && Math.abs(p.x-W/2)<hw && destExists(0,-1))
     { moveRoom(0,-1,W/2,PY2-p.size-10); return; }
-  if(rm.doors.D && p.y>=PY2+mid && Math.abs(p.x-W/2)<hw)
+  if(rm.doors.D && p.y>=PY2+mid && Math.abs(p.x-W/2)<hw && destExists(0,1))
     { moveRoom(0,1,W/2,PY1+p.size+10); return; }
-  if(rm.doors.L && p.x<=PX1-mid && Math.abs(p.y-H/2)<hw)
+  if(rm.doors.L && p.x<=PX1-mid && Math.abs(p.y-H/2)<hw && destExists(-1,0))
     { moveRoom(-1,0,PX2-p.size-10,H/2); return; }
-  if(rm.doors.R && p.x>=PX2+mid && Math.abs(p.y-H/2)<hw)
+  if(rm.doors.R && p.x>=PX2+mid && Math.abs(p.y-H/2)<hw && destExists(1,0))
     { moveRoom(1,0,PX1+p.size+10,H/2); return; }
 }
 
